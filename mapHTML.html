@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bing Maps Search</title>
+  <script type="text/javascript" src="AvodEgHL-TuCN5eygkQM9U_9jXHQbvvV-T_o_TZX67lqHR-DJx1lRbhgSgJDMSe6"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #myMap {
+      height: 100%;
+    }
+    #searchButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 5;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+  </style>
+  <script type="text/javascript">
+    let map;
+    let searchManager;
+    let currentLocation = { latitude: 0, longitude: 0 };
+
+    function loadMap() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          currentLocation.latitude = position.coords.latitude;
+          currentLocation.longitude = position.coords.longitude;
+
+          map = new Microsoft.Maps.Map(document.getElementById('myMap'), {
+            center: new Microsoft.Maps.Location(currentLocation.latitude, currentLocation.longitude),
+            zoom: 15
+          });
+
+          const userPin = new Microsoft.Maps.Pushpin(map.getCenter(), {
+            title: 'You are here',
+            icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48"><path d="M12 2C8.13 2 5 5.13 5 9c0 3.39 2.69 7.18 6.3 11.05.37.4.99.4 1.36 0C16.31 16.18 19 12.39 19 9c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/></svg>',
+            anchor: new Microsoft.Maps.Point(24, 24)
+          });
+
+          map.entities.push(userPin);
+        });
+      }
+    }
+
+    function searchNearby() {
+      if (!searchManager) {
+        Microsoft.Maps.loadModule('Microsoft.Maps.Search', function () {
+          searchManager = new Microsoft.Maps.Search.SearchManager(map);
+          searchNearby();
+        });
+      } else {
+        const requestOptions = {
+          bounds: map.getBounds(),
+          where: 'cardiologists',
+          callback: function (answer, userData) {
+            map.entities.clear();
+            map.entities.push(userPin); // Ensure the user's location pin stays on the map
+
+            for (let i = 0; i < answer.results.length; i++) {
+              const pin = new Microsoft.Maps.Pushpin(answer.results[i].location, {
+                title: answer.results[i].name,
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48"><path d="M12 2C8.13 2 5 5.13 5 9c0 3.39 2.69 7.18 6.3 11.05.37.4.99.4 1.36 0C16.31 16.18 19 12.39 19 9c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/></svg>',
+                anchor: new Microsoft.Maps.Point(24, 24)
+              });
+              map.entities.push(pin);
+            }
+          },
+          errorCallback: function (e) {
+            console.error('Error occurred: ', e);
+          }
+        };
+
+        searchManager.geocode(requestOptions);
+      }
+    }
+  </script>
+</head>
+<body onload="loadMap()">
+  <button id="searchButton" onclick="searchNearby()">Search</button>
+  <div id="myMap"></div>
+</body>
+</html>
